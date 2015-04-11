@@ -195,7 +195,8 @@ else(LIBSOXR_FOUND)
 
     # Use "fast and dirty" linear interpolator if neither SOXR nor Samplerate are unavailable
     set(mt32emu_qt_SOURCES ${mt32emu_qt_SOURCES}
-      src/resample/LinearResampler.cpp
+#      src/resample/LinearResampler.cpp
+      src/resample/InternalResampler.cpp
     )
   endif(LIBSAMPLERATE_FOUND)
 endif(LIBSOXR_FOUND)
