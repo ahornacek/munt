@@ -1,0 +1,107 @@
+/* Copyright (C) 2015 Sergey V. Mikayev
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "IIRDecimator.h"
+
+#include <cmath>
+
+#ifndef M_PI
+static const double M_PI = 3.1415926535897931;
+#endif
+
+// Sharp elliptic filter with symmetric ripple: N=18, Ap=As=-106 dB, fp=0.238, fs = 0.25 (in terms of sample rate)
+static const double NUMERATOR_BEST[] {0.00143137924716997, 0.00789698517354518, 0.0294398110190094, 0.0799173748728548, 0.176072871289035,
+	0.323814086626527, 0.511425793167272, 0.702365967828135, 0.847109517379751, 0.901144542299114, 0.847109517379751, 0.702365967828135,
+	0.511425793167272, 0.323814086626527, 0.176072871289035, 0.0799173748728548, 0.0294398110190094, 0.00789698517354518, 0.00143137924716997};
+static const double DENOMINATOR_BEST[] {1.0, -2.69897208543826, 8.80398722907614, -16.1424580924884, 29.5248804330701, -40.1684486817326,
+	51.5296017286296, -54.0515071033872, 52.1159369741569, -42.6527147191785, 31.4919185157548, -19.9291740542395, 11.1241159254197,
+	-5.25734624012707, 2.10951442619652, -0.68470573213706, 0.17303565409162, -0.0304599797948271, 0.0029192180943142};
+
+// Average elliptic filter with symmetric ripple: N=12, Ap=As=-106 dB, fp=0.193, fs = 0.25 (in terms of sample rate)
+static const double NUMERATOR_GOOD[] {0.000891054570312711, 0.00401699642072141, 0.0116339860079785, 0.0241764921599365, 0.0395683393387297,
+	0.0525279880454076, 0.0576516896473707, 0.0525279880454076, 0.0395683393387297, 0.0241764921599365, 0.0116339860079785, 0.00401699642072141,
+	0.000891054570312711};
+static const double DENOMINATOR_GOOD[] {1.0, -3.75282253489812, 9.02653937439474, -14.9124231385925, 18.9475953813622, -18.8010210368353,
+	14.9129109507335, -9.40866788231319, 4.68220224634757, -1.78427646611801, 0.49489467322571, -0.0897350197525806, 0.00808647158647441};
+
+// Fast elliptic filter with symmetric ripple: N=8, Ap=As=-99 dB, fp=0.125, fs = 0.25 (in terms of sample rate)
+static const double NUMERATOR_FAST[] {0.000919048607199723, 0.00296201761602858, 0.00637178853917259, 0.00955422804027462, 0.0109258558065688,
+	0.00955422804027462, 0.00637178853917259, 0.00296201761602858, 0.000919048607199723};
+static const double DENOMINATOR_FAST[] {1.0, -4.0206974114077, 8.10330349808915, -10.1791188149644, 8.59525285186386, -4.94319220919619,
+	1.88033873505286, -0.430744335378428, 0.0453982115557566};
+
+IIRDecimator::C::C(const unsigned int order, const IIRCoefficient numerator[], const IIRCoefficient denominator[]) :
+	order(order),
+	numerator(numerator),
+	denominator(denominator)
+{
+	unsigned int delayLineLength = 2;
+	while (delayLineLength < order) delayLineLength <<= 1;
+	delayLineMask = delayLineLength - 1;
+	ringBuffer = new BufferedSample[delayLineLength][CHANNEL_COUNT];
+	memset(ringBuffer, 0, sizeof(BufferedSample) * delayLineLength * CHANNEL_COUNT);
+}
+
+IIRDecimator::IIRDecimator(const unsigned int order, const IIRCoefficient numerator[], const IIRCoefficient denominator[]) :
+	c(order, numerator, denominator),
+	ringBufferPosition(0),
+	phase(1)
+{}
+
+IIRDecimator::~IIRDecimator() {
+	delete[] c.ringBuffer;
+}
+
+void IIRDecimator::process(const FloatSample *&inSamples, unsigned int &inLength, FloatSample *&outSamples, unsigned int &outLength) {
+	while (outLength > 0) {
+		while (needNextInSample()) {
+			if (inLength == 0) return;
+			addInSamples(inSamples);
+			--inLength;
+		}
+		getOutSamples(outSamples);
+		--outLength;
+	}
+}
+
+unsigned int IIRDecimator::estimateInLength(const unsigned int outLength) const {
+	return (outLength - phase) << 1;
+}
+
+bool IIRDecimator::needNextInSample() const {
+	return phase != 0;
+}
+
+void IIRDecimator::addInSamples(const FloatSample *&inSamples) {
+	ringBufferPosition = (ringBufferPosition - 1) & c.delayLineMask;
+	// TODO: Add recursion
+	for (unsigned int channel = 0; channel < CHANNEL_COUNT; ++channel) {
+		c.ringBuffer[ringBufferPosition][channel] = *(inSamples++);
+	}
+	--phase;
+}
+
+void IIRDecimator::getOutSamples(FloatSample *&outSamples) {
+	for (unsigned int channel = 0; channel < CHANNEL_COUNT; ++channel) {
+		BufferedSample sample = 0.0;
+		unsigned int delaySampleIx = ringBufferPosition;
+		for (unsigned int tapIx = phase; tapIx < c.order; ++tapIx) {
+			sample += c.numerator[tapIx] * c.ringBuffer[(delaySampleIx++) & c.delayLineMask][channel];
+		}
+		*(outSamples++) = (FloatSample)sample;
+	}
+	++phase;
+}
