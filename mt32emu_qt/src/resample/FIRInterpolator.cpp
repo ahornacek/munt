@@ -18,7 +18,9 @@
 
 #include <cmath>
 
+#ifndef M_PI
 static const double M_PI = 3.1415926535897931;
+#endif
 
 FIRInterpolator::C::C(const unsigned int upsampleFactor, const double downsampleFactor, const FIRCoefficient kernel[], const unsigned int kernelLength) {
 	taps = kernel;
@@ -81,8 +83,9 @@ void FIRInterpolator::getOutSamples(FloatSample *&outSamples) {
 		for (unsigned int tapIx = (unsigned int)phase; tapIx < c.numberOfTaps; tapIx += c.numberOfPhases) {
 			FIRCoefficient tap = FIRCoefficient(c.taps[tapIx] + (c.taps[tapIx + 1] - c.taps[tapIx]) * phaseFraction);
 			for (unsigned int channel = 0; channel < CHANNEL_COUNT; ++channel) {
-				outSamples[channel] += tap * c.ringBuffer[(delaySampleIx++) & c.delayLineMask][channel];
+				outSamples[channel] += tap * c.ringBuffer[delaySampleIx][channel];
 			}
+			delaySampleIx = (delaySampleIx + 1) & c.delayLineMask;
 		}
 		outSamples += CHANNEL_COUNT;
 	} else {

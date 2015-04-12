@@ -18,7 +18,9 @@
 
 #include <cmath>
 
+#ifndef M_PI
 static const double M_PI = 3.1415926535897931;
+#endif
 static const double RATIONAL_RATIO_ACCURACY_FACTOR = 1E15;
 static const unsigned int MAX_NUMBER_OF_PHASES = 512;
 
@@ -103,14 +105,14 @@ SincResampler::C::C(const double outputFrequency, const double inputFrequency, c
 	i.computeResampleFactors(inputFrequency, outputFrequency);
 	double baseSamplePeriod = 1.0 / (inputFrequency * i.upsampleFactor);
 	i.fp = passbandFrequency * baseSamplePeriod;
-	i.fs = (inputFrequency - stopbandFrequency) * baseSamplePeriod;
+	i.fs = stopbandFrequency * baseSamplePeriod;
 	i.fc = 0.5 * (i.fp + i.fs);
 	i.dbRipple = dbSNR;
 	i.designKaiser();
 	const unsigned int kernelLength = i.order + 1;
 	kernel = i.windowedSinc(new FIRCoefficient[kernelLength], i.upsampleFactor);
 	lpf = new FIRInterpolator(i.upsampleFactor, i.downsampleFactor, kernel, kernelLength);
-	std::cerr << "FIR: " << i.upsampleFactor << "/" << i.downsampleFactor << ", N=" << kernelLength << ", fp=" << i.fp << ", fs=" << i.fs << std::endl;
+	std::cerr << "FIR: " << i.upsampleFactor << "/" << i.downsampleFactor << ", N=" << kernelLength << ", C=" << (double)kernelLength / i.upsampleFactor << ", fp=" << i.fp << ", fs=" << i.fs << std::endl;
 }
 
 SincResampler::SincResampler(const double outputFrequency, const double inputFrequency, const double passbandFrequency, const double stopbandFrequency, const double dbSNR) :
