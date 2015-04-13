@@ -4,6 +4,7 @@
 #include "SampleRateConverter.h"
 
 class SincResampler;
+class IIRDecimator;
 
 class InternalResampler : public SampleRateConverter {
 public:
@@ -16,6 +17,7 @@ private:
 	const MT32Emu::Sample *inBufferPtr;
 	MT32Emu::Bit32u inLength;
 	SincResampler *sincResampler;
+	IIRDecimator *iirDecimator;
 };
 
 #endif // INTERNAL_RESAMPLER_H

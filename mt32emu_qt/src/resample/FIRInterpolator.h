@@ -4,7 +4,7 @@
 typedef float FIRCoefficient;
 typedef float FloatSample;
 
-static const unsigned int CHANNEL_COUNT = 2;
+static const unsigned int FIR_INTERPOLATOR_CHANNEL_COUNT = 2;
 
 class FIRInterpolator {
 public:
@@ -28,7 +28,7 @@ private:
 		// Index of last delay line element, generally greater than numberOfTaps to form a proper binary mask
 		unsigned int delayLineMask;
 		// Delay line
-		FloatSample(*ringBuffer)[CHANNEL_COUNT];
+		FloatSample(*ringBuffer)[FIR_INTERPOLATOR_CHANNEL_COUNT];
 
 		C(const unsigned int upsampleFactor, const double downsampleFactor, const FIRCoefficient kernel[], const unsigned int kernelLength);
 	} c;

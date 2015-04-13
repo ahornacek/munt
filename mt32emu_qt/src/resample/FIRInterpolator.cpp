@@ -31,8 +31,8 @@ FIRInterpolator::C::C(const unsigned int upsampleFactor, const double downsample
 	unsigned int delayLineLength = 2;
 	while (delayLineLength < kernelLength) delayLineLength <<= 1;
 	delayLineMask = delayLineLength - 1;
-	ringBuffer = new FloatSample[delayLineLength][CHANNEL_COUNT];
-	memset(ringBuffer, 0, sizeof(FloatSample) * delayLineLength * CHANNEL_COUNT);
+	ringBuffer = new FloatSample[delayLineLength][FIR_INTERPOLATOR_CHANNEL_COUNT];
+	memset(ringBuffer, 0, sizeof(FloatSample) * delayLineLength * FIR_INTERPOLATOR_CHANNEL_COUNT);
 }
 
 FIRInterpolator::FIRInterpolator(const unsigned int upsampleFactor, const double downsampleFactor, const FIRCoefficient kernel[], const unsigned int kernelLength) :
@@ -67,7 +67,7 @@ bool FIRInterpolator::needNextInSample() const {
 
 void FIRInterpolator::addInSamples(const FloatSample *&inSamples) {
 	ringBufferPosition = (ringBufferPosition - 1) & c.delayLineMask;
-	for (unsigned int channel = 0; channel < CHANNEL_COUNT; ++channel) {
+	for (unsigned int channel = 0; channel < FIR_INTERPOLATOR_CHANNEL_COUNT; ++channel) {
 		c.ringBuffer[ringBufferPosition][channel] = *(inSamples++);
 	}
 	phase -= c.numberOfPhases;
@@ -75,22 +75,22 @@ void FIRInterpolator::addInSamples(const FloatSample *&inSamples) {
 
 void FIRInterpolator::getOutSamples(FloatSample *&outSamples) {
 	if (c.usePhaseInterpolation) {
-		for (unsigned int channel = 0; channel < CHANNEL_COUNT; ++channel) {
+		for (unsigned int channel = 0; channel < FIR_INTERPOLATOR_CHANNEL_COUNT; ++channel) {
 			outSamples[channel] = 0.0;
 		}
 		double phaseFraction = phase - floor(phase);
 		unsigned int delaySampleIx = ringBufferPosition;
 		for (unsigned int tapIx = (unsigned int)phase; tapIx < c.numberOfTaps; tapIx += c.numberOfPhases) {
 			FIRCoefficient tap = FIRCoefficient(c.taps[tapIx] + (c.taps[tapIx + 1] - c.taps[tapIx]) * phaseFraction);
-			for (unsigned int channel = 0; channel < CHANNEL_COUNT; ++channel) {
+			for (unsigned int channel = 0; channel < FIR_INTERPOLATOR_CHANNEL_COUNT; ++channel) {
 				outSamples[channel] += tap * c.ringBuffer[delaySampleIx][channel];
 			}
 			delaySampleIx = (delaySampleIx + 1) & c.delayLineMask;
 		}
-		outSamples += CHANNEL_COUNT;
+		outSamples += FIR_INTERPOLATOR_CHANNEL_COUNT;
 	} else {
 		// Optimised for rational resampling ratios when phase is always integer
-		for (unsigned int channel = 0; channel < CHANNEL_COUNT; ++channel) {
+		for (unsigned int channel = 0; channel < FIR_INTERPOLATOR_CHANNEL_COUNT; ++channel) {
 			FloatSample sample = 0.0;
 			unsigned int delaySampleIx = ringBufferPosition;
 			for (unsigned int tapIx = (unsigned int)phase; tapIx < c.numberOfTaps; tapIx += c.numberOfPhases) {

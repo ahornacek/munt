@@ -5,10 +5,13 @@ typedef double IIRCoefficient;
 typedef double BufferedSample;
 typedef float FloatSample;
 
-static const unsigned int CHANNEL_COUNT = 2;
+static const unsigned int IIR_DECIMATOR_CHANNEL_COUNT = 2;
 
 class IIRDecimator {
 public:
+	enum Quality {CUSTOM, FAST, GOOD, BEST};
+
+	IIRDecimator(const Quality quality);
 	IIRDecimator(const unsigned int order, const IIRCoefficient numerator[], const IIRCoefficient denominator[]);
 	~IIRDecimator();
 	void process(const FloatSample *&inSamples, unsigned int &inLength, FloatSample *&outSamples, unsigned int &outLength);
@@ -23,15 +26,16 @@ private:
 		// Index of last delay line element, generally greater than (order + 1) to form a proper binary mask
 		unsigned int delayLineMask;
 		// Delay line
-		BufferedSample(*ringBuffer)[CHANNEL_COUNT];
+		BufferedSample(*ringBuffer)[IIR_DECIMATOR_CHANNEL_COUNT];
 
-		C(const unsigned int order, const IIRCoefficient numerator[], const IIRCoefficient denominator[]);
+		C(const unsigned int order, const IIRCoefficient numerator[], const IIRCoefficient denominator[], const Quality quality);
 	} c;
 	// Index of current sample in delay line
 	unsigned int ringBufferPosition;
 	// Current phase
 	unsigned int phase;
 
+	IIRDecimator(const unsigned int order, const IIRCoefficient numerator[], const IIRCoefficient denominator[], const Quality quality);
 	bool needNextInSample() const;
 	void addInSamples(const FloatSample *&inSamples);
 	void getOutSamples(FloatSample *&outSamples);

@@ -19,10 +19,12 @@
 #include <QtGlobal>
 
 #include "SincResampler.h"
+#include "IIRDecimator.h"
 
 using namespace MT32Emu;
 
 static const double DB_SNR = 100;
+static const unsigned int CHANNEL_COUNT = 2;
 
 InternalResampler::InternalResampler(Synth *synth, double targetSampleRate, SRCQuality quality) :
 	SampleRateConverter(synth, targetSampleRate, quality),
