@@ -28,8 +28,9 @@ FIRInterpolator::C::C(const unsigned int upsampleFactor, const double downsample
 	numberOfTaps = kernelLength;
 	numberOfPhases = upsampleFactor;
 	phaseIncrement = downsampleFactor;
+	unsigned int minDelayLineLength = (unsigned int)ceil(kernelLength / upsampleFactor);
 	unsigned int delayLineLength = 2;
-	while (delayLineLength < kernelLength) delayLineLength <<= 1;
+	while (delayLineLength < minDelayLineLength) delayLineLength <<= 1;
 	delayLineMask = delayLineLength - 1;
 	ringBuffer = new FloatSample[delayLineLength][FIR_INTERPOLATOR_CHANNEL_COUNT];
 	memset(ringBuffer, 0, sizeof(FloatSample) * delayLineLength * FIR_INTERPOLATOR_CHANNEL_COUNT);
