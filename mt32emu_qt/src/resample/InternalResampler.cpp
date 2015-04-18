@@ -24,7 +24,7 @@
 using namespace MT32Emu;
 
 static const double MAX_AUDIBLE_FREQUENCY = 20000.0;
-static const double DB_SNR = 100;
+static const double DB_SNR = 106;
 static const uint CHANNEL_COUNT = 2;
 
 class CascadeStage {
