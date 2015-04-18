@@ -107,7 +107,7 @@ void IIRDecimator::process(const FloatSample *&inSamples, unsigned int &inLength
 }
 
 unsigned int IIRDecimator::estimateInLength(const unsigned int outLength) const {
-	return (outLength - phase) << 1;
+	return (outLength << 1) + phase;
 }
 
 bool IIRDecimator::needNextInSample() const {
