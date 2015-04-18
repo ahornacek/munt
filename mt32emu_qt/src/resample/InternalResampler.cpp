@@ -59,7 +59,6 @@ public:
 
 InternalResampler * InternalResampler::createInternalResampler(MT32Emu::Synth *synth, double targetSampleRate, SRCQuality quality) {
 	double inSampleRate = synth->getStereoOutputSampleRate();
-	double sincOutSampleRate, passband, stopband;
 	bool needIIRStage = true;
 	if (MAX_AUDIBLE_FREQUENCY < (0.25 * inSampleRate)) {
 		// Oversampled input allows to bypass IIR stage
@@ -68,6 +67,7 @@ InternalResampler * InternalResampler::createInternalResampler(MT32Emu::Synth *s
 		qWarning() << "InternalResampler intended to interpolate oversampled signal only";
 		return NULL;
 	}
+	double sincOutSampleRate, passband, stopband;
 	if (needIIRStage) {
 		sincOutSampleRate = 2.0 * targetSampleRate;
 		passband = 0.5 * targetSampleRate;
@@ -95,8 +95,11 @@ InternalResampler::~InternalResampler() {
 
 void InternalResampler::getOutputSamples(Sample *buffer, unsigned int length) {
 	if (iirStage == NULL) {
+		sincStage->getOutputSamples(buffer, length);
 	} else {
+		iirStage->getOutputSamples(buffer, length);
 	}
+	// TODO add sample conversion
 }
 
 CascadeStage::CascadeStage() :
@@ -109,15 +112,16 @@ SincStage::SincStage(Synth &synth, const double outputFrequency, const double in
 	resampler(outputFrequency, inputFrequency, passbandFrequency, stopbandFrequency, dbSNR)
 {}
 
-void SincStage::getOutputSamples(FloatSample *buffer, unsigned int length) {
+void SincStage::getOutputSamples(FloatSample *outBuffer, unsigned int length) {
 	while (length > 0) {
 		if (size == 0) {
 			size = resampler.estimateInLength(length);
 			size = qBound((uint)1, size, (uint)MAX_SAMPLES_PER_RUN);
+			// TODO add sample conversion
 			synth.render(buffer, size);
 			bufferPtr = buffer;
 		}
-		resampler.process(bufferPtr, size, buffer, length);
+		resampler.process(bufferPtr, size, outBuffer, length);
 	}
 }
 
@@ -126,7 +130,7 @@ IIRStage::IIRStage(SincStage &sincStage, const IIRDecimator::Quality quality) :
 	decimator(quality)
 {}
 
-void IIRStage::getOutputSamples(FloatSample *buffer, unsigned int length) {
+void IIRStage::getOutputSamples(FloatSample *outBuffer, unsigned int length) {
 	while (length > 0) {
 		if (size == 0) {
 			size = decimator.estimateInLength(length);
@@ -134,6 +138,6 @@ void IIRStage::getOutputSamples(FloatSample *buffer, unsigned int length) {
 			sincStage.getOutputSamples(buffer, size);
 			bufferPtr = buffer;
 		}
-		decimator.process(bufferPtr, size, buffer, length);
+		decimator.process(bufferPtr, size, outBuffer, length);
 	}
 }
