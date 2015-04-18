@@ -73,7 +73,9 @@ IIRDecimator::C::C(const unsigned int useOrder, const IIRCoefficient useNumerato
 	while (delayLineLength < (order + 1)) delayLineLength <<= 1;
 	delayLineMask = delayLineLength - 1;
 	ringBuffer = new BufferedSample[delayLineLength][IIR_DECIMATOR_CHANNEL_COUNT];
-	memset(ringBuffer, 0, sizeof(BufferedSample) * delayLineLength * IIR_DECIMATOR_CHANNEL_COUNT);
+	BufferedSample *s = *ringBuffer;
+	BufferedSample *e = ringBuffer[delayLineLength];
+	while (s < e) *(s++) = 0;
 }
 
 IIRDecimator::IIRDecimator(const Quality quality) :

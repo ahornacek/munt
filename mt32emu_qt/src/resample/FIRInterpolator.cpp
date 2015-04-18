@@ -33,7 +33,9 @@ FIRInterpolator::C::C(const unsigned int upsampleFactor, const double downsample
 	while (delayLineLength < minDelayLineLength) delayLineLength <<= 1;
 	delayLineMask = delayLineLength - 1;
 	ringBuffer = new FloatSample[delayLineLength][FIR_INTERPOLATOR_CHANNEL_COUNT];
-	memset(ringBuffer, 0, sizeof(FloatSample) * delayLineLength * FIR_INTERPOLATOR_CHANNEL_COUNT);
+	FloatSample *s = *ringBuffer;
+	FloatSample *e = ringBuffer[delayLineLength];
+	while (s < e) *(s++) = 0;
 }
 
 FIRInterpolator::FIRInterpolator(const unsigned int upsampleFactor, const double downsampleFactor, const FIRCoefficient kernel[], const unsigned int kernelLength) :
