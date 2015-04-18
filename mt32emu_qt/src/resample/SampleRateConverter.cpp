@@ -37,7 +37,7 @@ SampleRateConverter *SampleRateConverter::createSampleRateConverter(Synth *synth
 	Q_UNUSED(quality);
 	return new LinearResampler(synth, targetSampleRate);
 #else
-	return new InternalResampler(synth, targetSampleRate, quality);
+	return InternalResampler::createInternalResampler(synth, targetSampleRate, quality);
 #endif
 }
 
