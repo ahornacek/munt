@@ -35,7 +35,6 @@ private:
 	// Current phase
 	unsigned int phase;
 
-	IIRDecimator(const unsigned int order, const IIRCoefficient numerator[], const IIRCoefficient denominator[], const Quality quality);
 	bool needNextInSample() const;
 	void addInSamples(const FloatSample *&inSamples);
 	void getOutSamples(FloatSample *&outSamples);

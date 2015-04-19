@@ -25,8 +25,8 @@ using namespace MT32Emu;
 LinearResampler::LinearResampler(Synth *synth, double targetSampleRate) :
 	SampleRateConverter(synth, targetSampleRate, SampleRateConverter::SRC_FASTEST),
 	inBuffer(new Sample[2 * MAX_SAMPLES_PER_RUN]),
-	position(2.0f), // Preload delay line which effectively makes resampler zero phase
-	inLength()
+	inLength(),
+	position(2.0f) // Preload delay line which effectively makes resampler zero phase
 {
 	inBufferPtr = inBuffer;
 }
