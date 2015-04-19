@@ -15,6 +15,7 @@
  */
 
 #include <QtGlobal>
+#include <QtDebug>
 
 #if defined WITH_LIBSOXR_RESAMPLER
 #include "SoxrAdapter.h"

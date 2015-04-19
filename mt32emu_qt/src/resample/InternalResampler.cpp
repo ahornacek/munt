@@ -17,6 +17,7 @@
 #include "InternalResampler.h"
 
 #include <QtGlobal>
+#include <QtDebug>
 
 #include "SincResampler.h"
 #include "IIRDecimator.h"

@@ -18,6 +18,8 @@
 
 #include <QtGlobal>
 
+#include <cmath>
+
 using namespace MT32Emu;
 
 LinearResampler::LinearResampler(Synth *synth, double targetSampleRate) :

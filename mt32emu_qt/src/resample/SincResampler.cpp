@@ -17,6 +17,7 @@
 #include "SincResampler.h"
 
 #include <cmath>
+#include <iostream>
 
 #ifndef M_PI
 static const double M_PI = 3.1415926535897931;
