@@ -18,7 +18,7 @@ private:
 		// Filter coefficients
 		const FIRCoefficient *taps;
 		// Indicates whether to interpolate filter taps
-		boolean usePhaseInterpolation;
+		bool usePhaseInterpolation;
 		// Size of array of filter coefficients
 		unsigned int numberOfTaps;
 		// Upsampling factor

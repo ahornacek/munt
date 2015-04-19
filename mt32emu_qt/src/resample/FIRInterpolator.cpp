@@ -61,7 +61,7 @@ void FIRInterpolator::process(const FloatSample *&inSamples, unsigned int &inLen
 }
 
 unsigned int FIRInterpolator::estimateInLength(const unsigned int outLength) const {
-	return unsigned int((outLength * c.phaseIncrement + phase) / c.numberOfPhases);
+	return (unsigned int)((outLength * c.phaseIncrement + phase) / c.numberOfPhases);
 }
 
 bool FIRInterpolator::needNextInSample() const {
