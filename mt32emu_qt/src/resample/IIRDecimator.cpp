@@ -68,6 +68,7 @@ IIRDecimator::C::C(const unsigned int useOrder, const IIRCoefficient useNumerato
 			denominator = DENOMINATOR_BEST;
 			break;
 		default:
+			numeratorSize = 0;
 			break;
 		}
 		order = (numeratorSize / sizeof(IIRCoefficient)) - 1;
