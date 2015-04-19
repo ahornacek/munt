@@ -17,6 +17,7 @@
 #include "IIRDecimator.h"
 
 #include <cmath>
+#include <cstddef>
 
 #ifndef M_PI
 static const double M_PI = 3.1415926535897931;
