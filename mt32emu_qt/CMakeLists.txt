@@ -14,7 +14,7 @@ set(mt32emu_qt_VERSION_PATCH 0)
 option(mt32emu-qt_WITH_ALSA_MIDI_DRIVER "Use ALSA MIDI sequencer" TRUE)
 option(mt32emu-qt_USE_PULSEAUDIO_DYNAMIC_LOADING "Load PulseAudio library dynamically" TRUE)
 option(mt32emu-qt_WITH_DEBUG_WINCONSOLE "Use console for showing debug output on Windows" FALSE)
-option(mt32emu-qt_WITH_INTERNAL_RESAMPLER "Use internal linear interpolator for resampling" TRUE)
+option(mt32emu-qt_WITH_INTERNAL_RESAMPLER "Use internal resampler" TRUE)
 
 add_definitions(-DPACKAGE_VERSION="${munt_VERSION_MAJOR}.${munt_VERSION_MINOR}.${munt_VERSION_PATCH}")
 add_definitions(-DAPP_VERSION="${mt32emu_qt_VERSION_MAJOR}.${mt32emu_qt_VERSION_MINOR}.${mt32emu_qt_VERSION_PATCH}")
