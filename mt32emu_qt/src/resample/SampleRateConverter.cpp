@@ -20,10 +20,9 @@
 #include "SoxrAdapter.h"
 #elif defined WITH_LIBSAMPLERATE_RESAMPLER
 #include "SamplerateAdapter.h"
-#elif defined WITH_LINEAR_RESAMPLER
-#include "LinearResampler.h"
 #else
 #include "InternalResampler.h"
+#include "LinearResampler.h"
 #endif
 
 using namespace MT32Emu;
@@ -33,11 +32,13 @@ SampleRateConverter *SampleRateConverter::createSampleRateConverter(Synth *synth
 	return new SoxrAdapter(synth, targetSampleRate, quality);
 #elif defined WITH_LIBSAMPLERATE_RESAMPLER
 	return new SamplerateAdapter(synth, targetSampleRate, quality);
-#elif defined WITH_LINEAR_RESAMPLER
-	Q_UNUSED(quality);
-	return new LinearResampler(synth, targetSampleRate);
 #else
-	return InternalResampler::createInternalResampler(synth, targetSampleRate, quality);
+	if (quality != SRC_FASTEST) {
+		InternalResampler *resampler = InternalResampler::createInternalResampler(synth, targetSampleRate, quality);
+		if (resampler != NULL) return resampler;
+		qWarning() << "Unable to create InternalResampler, fall back to LinearResampler";
+	}
+	return new LinearResampler(synth, targetSampleRate);
 #endif
 }
 
