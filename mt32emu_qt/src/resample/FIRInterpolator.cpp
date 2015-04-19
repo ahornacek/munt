@@ -93,6 +93,20 @@ void FIRInterpolator::getOutSamples(FloatSample *&outSamples) {
 		outSamples += FIR_INTERPOLATOR_CHANNEL_COUNT;
 	} else {
 		// Optimised for rational resampling ratios when phase is always integer
+#if 0
+		for (unsigned int channel = 0; channel < FIR_INTERPOLATOR_CHANNEL_COUNT; ++channel) {
+			outSamples[channel] = 0.0;
+		}
+		unsigned int delaySampleIx = ringBufferPosition;
+		for (unsigned int tapIx = (unsigned int)phase; tapIx < c.numberOfTaps; tapIx += c.numberOfPhases) {
+			FIRCoefficient tap = c.taps[tapIx];
+			for (unsigned int channel = 0; channel < FIR_INTERPOLATOR_CHANNEL_COUNT; ++channel) {
+				outSamples[channel] += tap * c.ringBuffer[delaySampleIx][channel];
+			}
+			delaySampleIx = (delaySampleIx + 1) & c.delayLineMask;
+		}
+		outSamples += FIR_INTERPOLATOR_CHANNEL_COUNT;
+#else
 		for (unsigned int channel = 0; channel < FIR_INTERPOLATOR_CHANNEL_COUNT; ++channel) {
 			FloatSample sample = 0.0;
 			unsigned int delaySampleIx = ringBufferPosition;
@@ -101,6 +115,7 @@ void FIRInterpolator::getOutSamples(FloatSample *&outSamples) {
 			}
 			*(outSamples++) = sample;
 		}
+#endif
 	}
 	phase += c.phaseIncrement;
 }
