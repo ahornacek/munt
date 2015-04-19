@@ -44,7 +44,7 @@ private:
 
 public:
 	SincStage(Synth &synth, const double outputFrequency, const double inputFrequency, const double passbandFrequency, const double stopbandFrequency, const double dbSNR);
-	void getOutputSamples(FloatSample *buffer, unsigned int length);
+	void getOutputSamples(FloatSample *buffer, uint length);
 };
 
 class IIRStage : public CascadeStage {
@@ -54,7 +54,7 @@ private:
 
 public:
 	IIRStage(SincStage &sincStage, const IIRDecimator::Quality quality);
-	void getOutputSamples(FloatSample *buffer, unsigned int length);
+	void getOutputSamples(FloatSample *buffer, uint length);
 };
 
 InternalResampler * InternalResampler::createInternalResampler(MT32Emu::Synth *synth, double targetSampleRate, SRCQuality quality) {
@@ -93,13 +93,44 @@ InternalResampler::~InternalResampler() {
 	delete sincStage;
 }
 
-void InternalResampler::getOutputSamples(Sample *buffer, unsigned int length) {
-	if (iirStage == NULL) {
-		sincStage->getOutputSamples(buffer, length);
-	} else {
-		iirStage->getOutputSamples(buffer, length);
+void InternalResampler::getOutputSamples(Sample *outBuffer, uint totalFrames) {
+#if MT32EMU_USE_FLOAT_SAMPLES
+	FloatSample *buffer = outBuffer;
+	uint size = totalFrames;
+#else
+	FloatSample buffer[CHANNEL_COUNT * MAX_SAMPLES_PER_RUN];
+	while (totalFrames > 0) {
+		uint size = qMin(totalFrames, MAX_SAMPLES_PER_RUN);
+#endif
+		if (iirStage == NULL) {
+			sincStage->getOutputSamples(buffer, size);
+		} else {
+			iirStage->getOutputSamples(buffer, size);
+		}
+#if !MT32EMU_USE_FLOAT_SAMPLES
+		FloatSample *outs = buffer;
+		FloatSample *ends = buffer + CHANNEL_COUNT * size;
+		while (outs < ends) {
+			FloatSample f = *(outs++);
+			*(outBuffer++) = (Sample)qBound(-0x8000, SampleEx((f < 0.0f) ? f - 0.5f : f + 0.5f), 0x7FFF);
+		}
+		totalFrames -= size;
 	}
-	// TODO add sample conversion
+#endif
+}
+
+static void getInputSamples(Synth &synth, FloatSample *outBuffer, uint size) {
+#if MT32EMU_USE_FLOAT_SAMPLES
+	synth.render(outBuffer, size);
+#else
+	Sample inSamples[CHANNEL_COUNT * MAX_SAMPLES_PER_RUN];
+	synth.render(inSamples, size);
+	Sample *ins = inSamples;
+	Sample *ends = inSamples + CHANNEL_COUNT * size;
+	while (ins < ends) {
+		*(outBuffer++) = *(ins++);
+	}
+#endif
 }
 
 CascadeStage::CascadeStage() :
@@ -112,13 +143,12 @@ SincStage::SincStage(Synth &synth, const double outputFrequency, const double in
 	resampler(outputFrequency, inputFrequency, passbandFrequency, stopbandFrequency, dbSNR)
 {}
 
-void SincStage::getOutputSamples(FloatSample *outBuffer, unsigned int length) {
+void SincStage::getOutputSamples(FloatSample *outBuffer, uint length) {
 	while (length > 0) {
 		if (size == 0) {
 			size = resampler.estimateInLength(length);
 			size = qBound((uint)1, size, (uint)MAX_SAMPLES_PER_RUN);
-			// TODO add sample conversion
-			synth.render(buffer, size);
+			getInputSamples(synth, buffer, size);
 			bufferPtr = buffer;
 		}
 		resampler.process(bufferPtr, size, outBuffer, length);
@@ -130,7 +160,7 @@ IIRStage::IIRStage(SincStage &sincStage, const IIRDecimator::Quality quality) :
 	decimator(quality)
 {}
 
-void IIRStage::getOutputSamples(FloatSample *outBuffer, unsigned int length) {
+void IIRStage::getOutputSamples(FloatSample *outBuffer, uint length) {
 	while (length > 0) {
 		if (size == 0) {
 			size = decimator.estimateInLength(length);
